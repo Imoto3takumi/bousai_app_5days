@@ -4,13 +4,93 @@
   <meta charset="utf-8">
   <title>{% block title %}防災アプリ{% endblock %}</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    :root {
+      --brand-blue: #2d5db3;
+      --page-background: #f8fafc;
+      --text-color: #334155;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      color: var(--text-color);
+      background: var(--page-background);
+      font-family: "Noto Sans JP", "Yu Gothic", sans-serif;
+    }
+
+    .site-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      min-height: 70px;
+      padding: 0 max(24px, calc((100% - 1360px) / 2));
+      background: var(--brand-blue);
+      box-shadow: 0 2px 8px rgba(26, 58, 107, 0.16);
+    }
+
+    .site-header h1 {
+      margin: 0;
+      color: #ffffff;
+      font-size: 1.55rem;
+      letter-spacing: 0.04em;
+    }
+
+    .menu-button {
+      padding: 8px;
+      border: 0;
+      color: #ffffff;
+      background: transparent;
+      font-size: 1.65rem;
+      line-height: 1;
+      cursor: pointer;
+    }
+
+    .site-nav {
+      display: none;
+      padding: 12px 24px;
+      background: #ffffff;
+      border-bottom: 1px solid #e2e8f0;
+      text-align: right;
+    }
+
+    .site-nav.is-open {
+      display: block;
+    }
+
+    .site-nav a {
+      margin-left: 12px;
+      color: var(--brand-blue);
+    }
+
+    main {
+      min-height: calc(100vh - 70px);
+    }
+
+    @media (max-width: 600px) {
+      .site-header {
+        min-height: 60px;
+        padding: 0 16px;
+      }
+
+      .site-header h1 {
+        font-size: 1.25rem;
+      }
+    }
+  </style>
 </head>
 <body>
   <!-- ヘッダー -->
-  <h1>防災アプリ</h1>
+  <header class="site-header">
+    <h1>防災アプリ</h1>
+    <button class="menu-button" type="button" aria-label="メニューを開く" aria-expanded="false" onclick="toggleMenu()">☰</button>
+  </header>
 
   <!-- ナビゲーション -->
-  <nav>
+  <nav class="site-nav" id="siteNav">
     <a href="/">ホーム</a> |
     <a href="/shelter_search">避難所検索</a> |
     <a href="/shelter_register">避難所登録</a> |
@@ -24,11 +104,17 @@
       <a href="/login">ログイン</a>
     {% endif %}
   </nav>
-  <hr>
-
   <main>
     <!-- ここに子テンプレートの content が入る -->
     {% block content %}{% endblock %}
   </main>
+  <script>
+    function toggleMenu() {
+      const menu = document.getElementById('siteNav');
+      const button = document.querySelector('.menu-button');
+      const isOpen = menu.classList.toggle('is-open');
+      button.setAttribute('aria-expanded', String(isOpen));
+    }
+  </script>
 </body>
 </html>
