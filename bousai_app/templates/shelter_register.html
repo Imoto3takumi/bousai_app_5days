@@ -1,23 +1,351 @@
 {% extends "base.html" %}
 
 {% block content %}
-<h2>避難所登録</h2>
-<p>新しい避難所情報を登録します。</p>
+<style>
+  .register-page {
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 34px 24px 64px;
+  }
 
-<!-- 成功・エラーメッセージ表示 -->
-{% if success %}
-  <p>{{ message }}</p>
-{% endif %}
+  .register-panel {
+    position: relative;
+    overflow: hidden;
+    border: 2px solid #334155;
+    background: #ffffff;
+  }
 
-{% if error %}
-  <p>{{ message }}</p>
-{% endif %}
+  .register-title {
+    margin: 0;
+    width: 42%;
+    min-height: 70px;
+    padding: 20px 32px;
+    background: #d9d9d9;
+    color: #1f2937;
+    font-size: 1.8rem;
+    font-weight: 500;
+  }
 
-<form method="POST">
-  <p>
-    <label for="name">避難所名（必須）</label><br>
-    <input type="text" id="name" name="name">
-  </p>
-  <p><button type="submit">登録</button></p>
-</form>
+  .register-form {
+    display: grid;
+    grid-template-columns: 200px 240px 1fr;
+    grid-template-rows: repeat(4, auto) auto;
+    column-gap: 28px;
+    row-gap: 14px;
+    padding: 30px 42px 34px 84px;
+    min-height: 560px;
+  }
+
+  .form-field {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .form-field label {
+    color: #1f2937;
+    font-size: 0.95rem;
+  }
+
+  .form-field input,
+  .form-field select {
+    width: 200px;
+    min-height: 38px;
+    padding: 8px 12px;
+    border: 1px solid #94a3b8;
+    background: #ffffff;
+    color: #334155;
+    font-size: 1rem;
+  }
+
+  .form-field input:focus,
+  .form-field select:focus {
+    outline: 2px solid #93c5fd;
+    outline-offset: 1px;
+  }
+
+  .checklist {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 12px;
+    width: 440px;
+    padding: 6px 0;
+  }
+
+  .check-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.88rem;
+  }
+
+  .check-item input {
+    min-height: auto;
+    width: 18px;
+    height: 18px;
+  }
+
+  .reload-button {
+    position: absolute;
+    top: 32px;
+    right: 28px;
+    padding: 8px 18px;
+    border: 1px solid #94a3b8;
+    background: #dbeafe;
+    color: #1f2937;
+    text-decoration: none;
+    font-size: 0.9rem;
+  }
+
+  .current-time {
+    position: absolute;
+    top: 12px;
+    right: 128px;
+    color: #334155;
+    font-size: 0.82rem;
+  }
+
+  .edit-tools {
+    position: absolute;
+    top: 142px;
+    right: 40px;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+    width: 190px;
+    z-index: 1;
+  }
+
+  .edit-tools .form-field {
+    width: 190px;
+  }
+
+  .edit-tools select {
+    width: 190px;
+  }
+
+  .form-actions {
+    grid-column: 3;
+    grid-row: 4 / span 2;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    gap: 14px;
+    padding-left: 20px;
+  }
+
+  .form-button {
+    min-height: 44px;
+    padding: 8px 18px;
+    border: 1px solid #94a3b8;
+    background: #dbeafe;
+    color: #1f2937;
+    cursor: pointer;
+    font-size: 0.95rem;
+  }
+
+  .form-button:hover {
+    background: #bfdbfe;
+  }
+
+  .message {
+    position: absolute;
+    top: 144px;
+    right: 40px;
+    width: 190px;
+    margin: 0;
+    padding: 12px 16px;
+    border: 2px solid;
+  }
+
+  .message-success {
+    top: 255px;
+    border-color: #eab308;
+    background: #fff700;
+    color: #1f2937;
+  }
+
+  .message-error {
+    border-color: #ef4444;
+    background: #fff1f2;
+    color: #dc2626;
+  }
+
+  .field-error {
+    position: absolute;
+    top: 24px;
+    left: 228px;
+    display: block;
+    width: 170px;
+    padding: 8px;
+    border: 2px solid #ef4444;
+    color: #dc2626;
+    font-size: 0.85rem;
+  }
+
+  .field-error:empty {
+    display: none;
+  }
+
+  .register-form > .form-field:nth-of-type(1) { grid-column: 1; grid-row: 1; }
+  .register-form > .form-field:nth-of-type(2) { grid-column: 1; grid-row: 2; }
+  .register-form > .form-field:nth-of-type(3) { grid-column: 1; grid-row: 3; }
+  .register-form > .form-field:nth-of-type(4) { grid-column: 1; grid-row: 4; }
+  .register-form > .form-field:nth-of-type(5) { grid-column: 1 / span 2; grid-row: 5; }
+  .register-form > .form-field:nth-of-type(6) { grid-column: 1 / span 2; grid-row: 6; }
+
+  @media (max-width: 700px) {
+    .register-page {
+      padding: 22px 12px 40px;
+    }
+
+    .register-title {
+      width: 100%;
+      padding: 18px 20px;
+      font-size: 1.45rem;
+    }
+
+    .register-form {
+      grid-template-columns: 1fr;
+      padding: 24px 20px;
+      min-height: auto;
+    }
+
+    .form-field input,
+    .form-field select,
+    .edit-tools select {
+      width: 100%;
+    }
+
+    .field-error {
+      position: static;
+      margin-top: 6px;
+    }
+
+    .checklist {
+      width: 100%;
+    }
+
+    .edit-tools,
+    .message {
+      position: static;
+      width: auto;
+      margin: 16px 20px 0;
+    }
+
+    .form-actions {
+      margin-top: 8px;
+    }
+
+    .form-actions {
+      grid-column: auto;
+      grid-row: auto;
+      padding-left: 0;
+    }
+  }
+</style>
+
+<div class="register-page">
+  <div class="register-panel">
+    <h2 class="register-title">
+      <span>避難所登録</span>
+      <a class="reload-button" href="{{ url_for('shelter_register') }}">更新</a>
+    </h2>
+    <span class="current-time" id="currentTime"></span>
+
+    <!-- 成功・エラーメッセージ表示 -->
+    {% if success %}
+      <p class="message message-success" role="status">{{ message }}</p>
+    {% endif %}
+
+    {% if error and not error_field %}
+      <p class="message message-error" role="alert">{{ message }}</p>
+    {% endif %}
+
+    <form class="edit-tools" method="GET">
+      <div class="form-field">
+        <label for="edit_id">登録内容更新</label>
+        <select id="edit_id" name="edit_id">
+          <option value="">新規登録</option>
+          {% for shelter in shelters %}
+            <option value="{{ shelter.id }}" {% if editing_id == shelter.id %}selected{% endif %}>{{ shelter.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <button class="form-button" type="submit">登録内容更新</button>
+    </form>
+
+    <form class="register-form" method="POST">
+      {% if editing_id %}
+        <input type="hidden" name="edit_id" value="{{ editing_id }}">
+      {% endif %}
+      <div class="form-field">
+        <label for="name">避難所名入力（必須）</label>
+        <input type="text" id="name" name="name" value="{{ form_values.name }}" required>
+        {% if error_field == 'name' %}<span class="field-error" role="alert">{{ message }}</span>{% endif %}
+      </div>
+
+      <div class="form-field">
+        <label for="address">住所（必須）</label>
+        <input type="text" id="address" name="address" value="{{ form_values.address }}" required>
+        {% if error_field == 'address' %}<span class="field-error" role="alert">{{ message }}</span>{% endif %}
+      </div>
+
+      <div class="form-field">
+        <label for="capacity">避難可能人数（必須）</label>
+        <input type="number" id="capacity" name="capacity" min="1" value="{{ form_values.capacity }}" required>
+        {% if error_field == 'capacity' %}<span class="field-error" role="alert">{{ message }}</span>{% endif %}
+      </div>
+
+      <div class="form-field">
+        <label for="status">開設状況選択（必須）</label>
+        <select id="status" name="status" required>
+          <option value="">選択してください</option>
+          <option value="開設中" {% if form_values.status == '開設中' %}selected{% endif %}>開設中</option>
+          <option value="未開設" {% if form_values.status == '未開設' %}selected{% endif %}>未開設</option>
+          <option value="閉鎖" {% if form_values.status == '閉鎖' %}selected{% endif %}>閉鎖</option>
+        </select>
+        {% if error_field == 'status' %}<span class="field-error" role="alert">{{ message }}</span>{% endif %}
+      </div>
+
+      <div class="form-field">
+        <label>設備情報選択（複数選択可）</label>
+        <div class="checklist">
+          {% for option in ['バリアフリー', '仕切り壁', 'ペット避難可', '多目的トイレ', '授乳スペース'] %}
+            <label class="check-item">
+              <input type="checkbox" name="equipment" value="{{ option }}" {% if option in form_values.equipment %}checked{% endif %}>
+              <span>{{ option }}</span>
+            </label>
+          {% endfor %}
+        </div>
+      </div>
+
+      <div class="form-field">
+        <label>物資情報選択（複数選択可）</label>
+        <div class="checklist">
+          {% for option in ['粉ミルク', '哺乳瓶', 'おむつ', '生理用品', '飲料水', '食料', '毛布'] %}
+            <label class="check-item">
+              <input type="checkbox" name="supplies" value="{{ option }}" {% if option in form_values.supplies %}checked{% endif %}>
+              <span>{{ option }}</span>
+            </label>
+          {% endfor %}
+        </div>
+      </div>
+
+      <div class="form-actions">
+        <a class="form-button" href="/">ホーム</a>
+        <button class="form-button" type="submit">{% if editing_id %}更新ボタン{% else %}登録ボタン{% endif %}</button>
+      </div>
+    </form>
+  </div>
+</div>
+<script>
+  document.getElementById('currentTime').textContent =
+    new Intl.DateTimeFormat('ja-JP', {
+      year: 'numeric', month: '2-digit', day: '2-digit',
+      hour: '2-digit', minute: '2-digit'
+    }).format(new Date()) + '現在';
+</script>
 {% endblock %}

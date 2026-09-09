@@ -110,6 +110,23 @@ def save_shelters():
             json.dump(shelters, f, ensure_ascii=False, indent=2)
     except Exception:
         pass
+
+
+def shelter_form_values(shelter=None):
+    """避難所データを登録フォーム用の値にそろえる"""
+    shelter = shelter or {}
+    values = {
+        'name': shelter.get('name', ''),
+        'address': shelter.get('address', ''),
+        'capacity': shelter.get('capacity', ''),
+        'status': shelter.get('status', ''),
+        'equipment': shelter.get('equipment', []),
+        'supplies': shelter.get('supplies', [])
+    }
+    for field in ('equipment', 'supplies'):
+        if isinstance(values[field], str):
+            values[field] = [values[field]] if values[field] else []
+    return values
 # ────────────────────────────────
 
 # ────────────────────────────────
@@ -290,26 +307,83 @@ def logout():
 @app.route('/shelter_register', methods=['GET', 'POST'])
 @login_required
 def shelter_register():
-    if request.method == 'POST':
-        name = request.form.get('name', '').strip()
+    edit_id = request.args.get('edit_id', type=int)
+    editing_shelter = next(
+        (shelter for shelter in shelters if shelter.get('id') == edit_id),
+        None
+    )
+    form_values = shelter_form_values(editing_shelter)
 
-        if not name:
+    if request.method == 'POST':
+        edit_id = request.form.get('edit_id', type=int)
+        form_values = {
+            'name': request.form.get('name', '').strip(),
+            'address': request.form.get('address', '').strip(),
+            'capacity': request.form.get('capacity', '').strip(),
+            'status': request.form.get('status', '').strip(),
+            'equipment': request.form.getlist('equipment'),
+            'supplies': request.form.getlist('supplies')
+        }
+
+        required_fields = (
+            ('name', '避難所名を入力してください。'),
+            ('address', '住所を入力してください。'),
+            ('capacity', '避難可能人数を入力してください。'),
+            ('status', '開設状況を選択してください。')
+        )
+        error_field, error_message = next(
+            ((field, message) for field, message in required_fields
+             if not form_values[field]),
+            (None, None)
+        )
+
+        if error_message:
             return render_template(
                 'shelter_register.html',
                 error=True,
-                message='避難所名を入力してください。'
+                message=error_message,
+                error_field=error_field,
+                form_values=form_values,
+                shelters=shelters,
+                editing_id=edit_id
             )
 
-        next_id = max((shelter.get('id', 0) for shelter in shelters), default=0) + 1
-        shelters.append({'id': next_id, 'name': name})
+        if edit_id:
+            shelter = next(
+                (item for item in shelters if item.get('id') == edit_id),
+                None
+            )
+            if shelter is None:
+                return render_template(
+                    'shelter_register.html',
+                    error=True,
+                    message='更新対象の避難所が見つかりません。',
+                    error_field=None,
+                    form_values=form_values,
+                    shelters=shelters
+                )
+            shelter.update(form_values)
+            message = '避難所の登録内容を更新しました。'
+        else:
+            next_id = max((shelter.get('id', 0) for shelter in shelters), default=0) + 1
+            shelters.append({'id': next_id, **form_values})
+            message = '避難所の登録が完了しました。'
         save_shelters()
         return render_template(
             'shelter_register.html',
             success=True,
-            message='避難所の登録が完了しました。'
+            message=message,
+            form_values=form_values,
+            shelters=shelters,
+            editing_id=edit_id
         )
 
-    return render_template('shelter_register.html')
+    return render_template(
+        'shelter_register.html',
+        form_values=form_values,
+        shelters=shelters,
+        editing_id=edit_id
+    )
 
 # 避難所検索ページ
 @app.route('/shelter_search')
